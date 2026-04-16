@@ -1,0 +1,6 @@
+"0","plot(st_geometry(parcelas), add = TRUE, pch = 21, 
+     bg = ""red"", cex = 1.5)
+"
+"2","Error in plot.xy(xy.coords(x, y), type = type, ...) : 
+  plot.new has not been called yet
+"
