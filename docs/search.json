@@ -18,14 +18,14 @@
     "href": "exercicios/exercicio4.html",
     "title": "Exercício 4 - Amostragem de paisagem com restrição de borda",
     "section": "",
-    "text": "Neste exercício, trabalhei com um mapa de uso e cobertura da terra do município de Murici (AL), obtido por meio da classificação de imagens de satélite. Meu objetivo foi selecionar 15 pontos amostrais no interior de remanescentes florestais, garantindo que estivessem a pelo menos 2 km da borda do mapa, a fim de evitar efeitos de borda não controlados. Para cada ponto selecionado, extraí um buffer circular com raio de 500 m e, em seguida, calculei a composição percentual de cada classe de uso do solo presente nessas áreas. Além disso, incluí também uma área adicional correspondente ao Parque dos Manguezais, em Recife (PE), com o objetivo de ter mais experiência no uso das ferramentar e aprender um pouco mais utilizando o R."
+    "text": "Neste exercício, trabalhei com um mapa de uso e cobertura da terra do município de Murici (AL), obtido por meio da classificação de imagens de satélite. Meu objetivo foi selecionar 15 pontos amostrais no interior de remanescentes florestais, garantindo que estivessem a pelo menos 2 km da borda do mapa, a fim de evitar efeitos de borda não controlados. Para cada ponto selecionado, extraí um buffer circular com raio de 500 m e, em seguida, calculei a composição percentual de cada classe de uso do solo presente nessas áreas."
   },
   {
     "objectID": "exercicios/exercicio4.html#descrição",
     "href": "exercicios/exercicio4.html#descrição",
     "title": "Exercício 4 - Amostragem de paisagem com restrição de borda",
     "section": "",
-    "text": "Neste exercício, trabalhei com um mapa de uso e cobertura da terra do município de Murici (AL), obtido por meio da classificação de imagens de satélite. Meu objetivo foi selecionar 15 pontos amostrais no interior de remanescentes florestais, garantindo que estivessem a pelo menos 2 km da borda do mapa, a fim de evitar efeitos de borda não controlados. Para cada ponto selecionado, extraí um buffer circular com raio de 500 m e, em seguida, calculei a composição percentual de cada classe de uso do solo presente nessas áreas. Além disso, incluí também uma área adicional correspondente ao Parque dos Manguezais, em Recife (PE), com o objetivo de ter mais experiência no uso das ferramentar e aprender um pouco mais utilizando o R."
+    "text": "Neste exercício, trabalhei com um mapa de uso e cobertura da terra do município de Murici (AL), obtido por meio da classificação de imagens de satélite. Meu objetivo foi selecionar 15 pontos amostrais no interior de remanescentes florestais, garantindo que estivessem a pelo menos 2 km da borda do mapa, a fim de evitar efeitos de borda não controlados. Para cada ponto selecionado, extraí um buffer circular com raio de 500 m e, em seguida, calculei a composição percentual de cada classe de uso do solo presente nessas áreas."
   },
   {
     "objectID": "exercicios/exercicio4.html#murici---al",
