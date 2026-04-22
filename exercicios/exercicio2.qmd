@@ -1,0 +1,21 @@
+---
+title: "Exercício 2 - Workbook de Ecologia de Paisagens"
+date: 2026-03-27
+author: "Wendell Benvenuto"
+---
+
+![](image/ex2_1.png)
+
+Imagem 1: Arquivo Quarto aberto e configurado no R com as pastas do site.
+
+![](images/ex2_2.png)
+
+Imagem 2: Página inicial do site.
+
+![](images/ex2_3.png)
+
+Imagem 3: Aba sobre mim.
+
+![](images/ex2_4.png)
+
+Imagem 4: Aba de exercícios.

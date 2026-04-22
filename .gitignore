@@ -1,0 +1,15 @@
+# Arquivos temporários do R e RStudio
+.Rhistory
+.RData
+.Rproj.user/
+
+# Cache do Quarto
+.quarto/
+*_cache/
+*_files/
+
+# Pastas de sistema
+.DS_Store
+Thumbs.db
+/.quarto/
+**/*.quarto_ipynb
