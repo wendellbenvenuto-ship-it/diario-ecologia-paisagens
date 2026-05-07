@@ -1,24 +1,16 @@
 ---
-title: "Exercício 4 - Amostragem de paisagem com restrição de borda"
+title: "Exercício 4 - Amostragem de Paisagens com Restrição de Borda — Murici-AL"
 date: 2026-04-13
 author: "Wendell Benvenuto"
 ---
 
-## Descrição
-
-Neste exercício, trabalhei com um mapa de uso e cobertura da terra do município de Murici (AL), obtido por meio da classificação de imagens de satélite. Meu objetivo foi selecionar 15 pontos amostrais no interior de remanescentes florestais, garantindo que estivessem a pelo menos 2 km da borda do mapa, a fim de evitar efeitos de borda não controlados. Para cada ponto selecionado, extraí um buffer circular com raio de 500 m e, em seguida, calculei a composição percentual de cada classe de uso do solo presente nessas áreas.
-
-## Murici - AL
-
 ```{r}
-
 library(terra)
 library(tidyverse)
-library(ggplot2)
 library(tidyterra)
 library(landscapemetrics)
 
-getwd()
+setwd("C://Users/benve/OneDrive/Documentos/diario_ecologia_wendell/exercicios") # mude para o seu próprio diretório
 
 r_murici <- rast("2024_murici.tif")
 
@@ -49,6 +41,9 @@ if (is.list(area_sorteio)) {
 if (nrow(area_sorteio) == 0) {
   stop("Erro: Nenhuma floresta encontrada a mais de 2km da borda.")
 }
+```
+
+```{r mapa-pontos, fig.width=10, fig.height=7, warning=FALSE, message=FALSE}
 
 ggplot() +
   geom_spatraster(data = r_utm) +
@@ -59,11 +54,9 @@ ggplot() +
   geom_spatvector(data = area_sorteio, fill = "forestgreen", alpha = 0.5, color = NA) +
   labs(title = "Área de sorteio (floresta > 2 km da borda)") +
   theme_minimal()
+```
 
-#| fig.show: hold
-#| layout-ncol: 2
-#| fig.align: center
-#| out.width: 100%
+```{r continuar-analise, warning=FALSE, message=FALSE}
 
 set.seed(1234)
 pontos_finais <- NULL
@@ -116,6 +109,9 @@ write.csv(tabela_final, "uso_solo_murici_final.csv", row.names = FALSE)
 writeVector(pontos_finais, "pontos_final.shp", overwrite=TRUE)
 
 writeVector(buffers, "buffers_500m.shp", overwrite=TRUE)
+```
+
+```{r mapa-pontos, fig.width=10, fig.height=7, warning=FALSE, message=FALSE}
 
 ggplot() +
   geom_spatraster(data = r_utm) +
@@ -127,11 +123,9 @@ ggplot() +
   labs(title = "Pontos amostrais e buffers de 500 m") +
   theme_minimal() +
   theme(legend.position = "bottom")
+```
 
-#| fig.show: hold
-#| layout-ncol: 2
-#| fig.align: center
-#| out.width: 100%
+```{r continuar-analise, warning=FALSE, message=FALSE}
 
 # Identificar o valor numérico da classe Floresta
 id_floresta <- legenda$id[legenda$Categoria == "Formação Florestal"]
@@ -173,6 +167,9 @@ for(i in 1:nrow(buffers)) {
 metricas_paisagem <- bind_rows(metricas_lista)
 
 print(metricas_paisagem)
+```
+
+```{r continuar-analise, warning=FALSE, message=FALSE}
 
 lista_recortes <- list()
 for(i in 1:nrow(buffers)) {
@@ -196,8 +193,4 @@ ggplot(df_painel) +
         axis.ticks = element_blank(),
         panel.grid = element_blank(),
         legend.position = "bottom")
-
-#| fig.show: hold
-#| fig.width: 10
-#| fig.height: 6  
 ```

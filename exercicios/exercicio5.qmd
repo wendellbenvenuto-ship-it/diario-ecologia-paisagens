@@ -1,0 +1,687 @@
+---
+title: "Exercício 5 - Descrevendo uma paisagem"
+date: 2026-04-24
+author: "Wendell Benvenuto"
+---
+
+```{r}
+#| echo: true
+
+library(terra)
+library(tidyverse)
+library(tidyterra)
+library(landscapemetrics)
+
+# =============================================================================
+# 1. Diretório e leitura do raster
+# =============================================================================
+
+setwd("C:/Users/benve/Downloads") # ajuste se necessário
+
+r_paulista <- rast("2024_paulista.tif")
+
+# ALTERADO:
+# O raster possui valor 0 como fundo/sem classe.
+# Aqui transformamos 0 em NA para não entrar na vetorização.
+NAflag(r_paulista) <- 0
+r_paulista[r_paulista == 0] <- NA
+
+names(r_paulista) <- "classe"
+
+# =============================================================================
+# 2. Reprojeção para UTM
+# =============================================================================
+
+# ALTERADO:
+# O raster original está em EPSG:4326.
+# Para usar distância em metros, reprojetamos para UTM.
+r_utm <- project(r_paulista, "EPSG:31985", method = "near")
+
+names(r_utm) <- "classe"
+
+# Conferir classes presentes
+print(freq(r_utm))
+
+# =============================================================================
+# 3. Legenda das classes
+# =============================================================================
+
+# ALTERADO:
+# Corrigido fechamento do data.frame da legenda.
+legenda <- data.frame(
+  classe = c(3, 5, 11, 15, 20, 21, 23, 24, 25, 30, 31, 32, 33),
+  Categoria = c(
+    "Formação Florestal",
+    "Mangue",
+    "Campo Alagado e Área Pantanosa",
+    "Pastagem",
+    "Cana",
+    "Mosaico de Usos",
+    "Praia, Duna e Areal",
+    "Área Urbanizada",
+    "Outras Áreas não Vegetadas",
+    "Mineração",
+    "Aquicultura",
+    "Apicum",
+    "Rio, Lago e Oceano"
+  ),
+  Cores = c(
+    "#1f8d49",
+    "#04381d",
+    "#519799",
+    "#edde8e",
+    "#db4d4f",
+    "#ffefc3",
+    "#ffaa5f",
+    "#d4271e",
+    "#db4d4f",
+    "#9c0027",
+    "#091077",
+    "#fc8114",
+    "#2532e4"
+  )
+)
+
+# Raster categórico para visualização
+r_plot <- as.factor(r_utm)
+
+levels(r_plot) <- data.frame(
+  ID = legenda$classe,
+  Categoria = legenda$Categoria
+)
+
+# =============================================================================
+# 4. Vetorização do raster
+# =============================================================================
+
+# ALTERADO:
+# Vetoriza o raster já sem o fundo 0.
+vetor_total <- as.polygons(r_utm, dissolve = TRUE, values = TRUE, na.rm = TRUE)
+
+# Adiciona a categoria textual ao vetor
+vetor_total$Categoria <- legenda$Categoria[
+  match(vetor_total$classe, legenda$classe)
+]
+
+# Cria o limite geral do município/área válida
+municipio_limite <- aggregate(vetor_total)
+
+# =============================================================================
+# 5. Criação do limite seguro
+# =============================================================================
+
+# ALTERADO:
+# Distância da borda em metros.
+# Para 2 km, use 2000.
+# Para 100 m, use 100.
+dist_borda_m <- 1000
+
+limite_seguro <- buffer(municipio_limite, width = -dist_borda_m)
+
+if (is.null(limite_seguro) || nrow(limite_seguro) == 0) {
+  stop("Erro: o buffer interno eliminou toda a área. Reduza dist_borda_m.")
+}
+
+# =============================================================================
+# 6. Seleção da Formação Florestal
+# =============================================================================
+
+floresta <- vetor_total[vetor_total$Categoria == "Formação Florestal", ]
+
+if (nrow(floresta) == 0) {
+  stop("Erro: nenhuma área de Formação Florestal foi encontrada no raster.")
+}
+
+# ALTERADO:
+# Usa intersect() em vez de crop().
+# Assim a área de sorteio será a interseção real entre floresta e limite seguro.
+# =============================================================================
+# 6. Área de sorteio: floresta dentro do limite seguro
+# =============================================================================
+
+# ALTERADO:
+# O intersect() pode gerar objeto vazio ou com nrow = NA.
+# Por isso, usamos try() e uma checagem mais segura antes de continuar.
+
+area_sorteio <- try(
+  terra::intersect(floresta, limite_seguro),
+  silent = TRUE
+)
+
+# Verifica se deu erro no intersect()
+if (inherits(area_sorteio, "try-error")) {
+  stop("Erro: não foi possível calcular a interseção entre floresta e limite seguro.")
+}
+
+# Verifica se o objeto veio nulo
+if (is.null(area_sorteio)) {
+  stop("Erro: nenhuma área de floresta encontrada dentro do limite seguro.")
+}
+
+# Verifica número de feições de forma segura
+n_area <- try(nrow(area_sorteio), silent = TRUE)
+
+if (inherits(n_area, "try-error") || is.na(n_area) || n_area == 0) {
+  stop("Erro: nenhuma floresta encontrada dentro do limite seguro. Tente reduzir dist_borda_m.")
+}
+
+# ALTERADO:
+# Só agrega depois de confirmar que existe área válida.
+area_sorteio <- aggregate(area_sorteio)
+
+# Calcula área em hectares
+area_sorteio_ha <- expanse(area_sorteio, unit = "ha")
+print(area_sorteio_ha)
+
+# Calcula área em hectares
+area_sorteio_ha <- expanse(area_sorteio, unit = "ha")
+print(area_sorteio_ha)
+
+```
+
+```{r mapa-area-sorteio, fig.height=7, fig.width=10, message=FALSE, warning=FALSE}
+#| echo: true
+
+p_mapa <- ggplot() +
+  geom_spatraster(data = r_plot) +
+  scale_fill_manual(
+    values = setNames(legenda$Cores, legenda$Categoria),
+    na.value = "white",
+    name = "Uso do Solo",
+    drop = FALSE,
+    na.translate = FALSE
+  ) +
+  geom_spatvector(
+    data = municipio_limite,
+    fill = NA,
+    color = "black",
+    linewidth = 1
+  ) +
+  geom_spatvector(
+    data = limite_seguro,
+    fill = NA,
+    color = "black",
+    linetype = "dashed",
+    linewidth = 1
+  ) +
+  geom_spatvector(
+    data = floresta,
+    fill = "darkgreen",
+    alpha = 0.3,
+    color = NA
+  ) +
+  geom_spatvector(
+    data = area_sorteio,
+    fill = "forestgreen",
+    alpha = 0.6,
+    color = NA
+  ) +
+  labs(
+    title = paste0(
+      "Área de sorteio: floresta a mais de ",
+      dist_borda_m / 1000,
+      " km da borda"
+    ),
+    x = "Longitude",
+    y = "Latitude"
+  ) +
+  theme_minimal()
+
+p_mapa
+
+```
+
+```{r continuar-analise}
+
+set.seed(1234)
+
+pontos_finais <- NULL
+tentativas <- 0
+n_pontos_desejado <- 15
+dist_min_entre_pontos <- 1000   # metros
+raio_buffer <- 500              # metros
+
+while (is.null(pontos_finais) || nrow(pontos_finais) < n_pontos_desejado) {
+  
+  tentativas <- tentativas + 1
+  
+  cand <- spatSample(area_sorteio, size = 1, method = "random")
+  
+  if (!is.null(cand) && nrow(cand) > 0) {
+    
+    if (is.null(pontos_finais)) {
+      pontos_finais <- cand
+    } else {
+      dists <- distance(cand, pontos_finais)
+      
+      if (min(dists) >= dist_min_entre_pontos) {
+        pontos_finais <- rbind(pontos_finais, cand)
+      }
+    }
+  }
+  
+  if (tentativas > 5000) break
+}
+
+# Verifica se conseguiu gerar pontos suficientes
+if (is.null(pontos_finais) || nrow(pontos_finais) == 0) {
+  stop("Erro: nenhum ponto amostral foi gerado.")
+}
+
+if (nrow(pontos_finais) < n_pontos_desejado) {
+  warning(
+    paste(
+      "Atenção: foram gerados apenas",
+      nrow(pontos_finais),
+      "pontos após", tentativas, "tentativas."
+    )
+  )
+}
+
+# Garantir mesmo CRS do raster
+if (!identical(crs(pontos_finais), crs(r_utm))) {
+  pontos_finais <- project(pontos_finais, crs(r_utm))
+}
+
+# Criar buffers
+buffers <- buffer(pontos_finais, width = raio_buffer)
+buffers$id_paisagem <- 1:nrow(buffers)
+
+# Adicionar ID também aos pontos
+pontos_finais$id_ponto <- 1:nrow(pontos_finais)
+
+# ============================================================================
+# Extração de uso do solo dentro dos buffers
+# ============================================================================
+
+extracao <- terra::extract(r_utm, buffers)
+nome_col_raster <- names(extracao)[2]
+
+tabela_final <- extracao %>%
+  rename(
+    id_buffer = ID,
+    classe = !!sym(nome_col_raster)
+  ) %>%
+  filter(!is.na(classe)) %>%
+  group_by(id_buffer) %>%
+  mutate(total_px = n()) %>%
+  group_by(id_buffer, classe) %>%
+  summarise(
+    pixels = n(),
+    total_px = first(total_px),
+    percentagem = (pixels / total_px) * 100,
+    .groups = "drop"
+  ) %>%
+  left_join(
+    legenda %>% select(classe, Categoria, Cores),
+    by = "classe"
+  ) %>%
+  arrange(id_buffer, desc(percentagem))
+
+# Visualizar tabela no documento
+tabela_final
+
+# ============================================================================
+# Exportações
+# ============================================================================
+
+write.csv(tabela_final, "uso_solo_murici_final.csv", row.names = FALSE)
+writeVector(pontos_finais, "pontos_final.shp", overwrite = TRUE)
+writeVector(buffers, "buffers_500m.shp", overwrite = TRUE)
+
+```
+
+```{r mapa-pontos, fig.height=7, fig.width=10, message=FALSE, warning=FALSE}
+
+p_mapa_pontos <- ggplot() +
+  geom_spatraster(data = r_plot) +
+  scale_fill_manual(
+    values = setNames(legenda$Cores, legenda$Categoria),
+    na.value = "white",
+    name = "Uso do Solo",
+    drop = FALSE,
+    na.translate = FALSE
+  ) +
+  geom_spatvector(
+    data = buffers,
+    fill = NA,
+    color = "black",
+    linewidth = 1
+  ) +
+  geom_spatvector(
+    data = pontos_finais,
+    color = "red",
+    size = 2
+  ) +
+  geom_spatvector_text(
+    data = pontos_finais,
+    aes(label = id_ponto),
+    color = "white",
+    size = 3,
+    vjust = -0.8
+  ) +
+  labs(
+    title = "Pontos amostrais e buffers de 500 m",
+    x = "Longitude",
+    y = "Latitude"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom"
+  )
+
+p_mapa_pontos
+
+```
+
+```{r metricas-paisagem, warning=FALSE, message=FALSE}
+
+# =============================================================================
+# Cálculo de métricas de paisagem por buffer
+# =============================================================================
+
+# Identificar o valor numérico da classe Formação Florestal
+id_floresta <- legenda$classe[legenda$Categoria == "Formação Florestal"]
+
+if (length(id_floresta) == 0) {
+  stop("Erro: a classe 'Formação Florestal' não foi encontrada na legenda.")
+}
+
+# Lista para armazenar as métricas de cada buffer
+metricas_lista <- list()
+
+for (i in 1:nrow(buffers)) {
+  
+  # ---------------------------------------------------------------------------
+  # 1. Recortar e mascarar o raster pelo buffer atual
+  # ---------------------------------------------------------------------------
+  
+  crop_i <- crop(r_utm, buffers[i, ])
+  mask_i <- mask(crop_i, buffers[i, ])
+  
+  # Verificar se o buffer possui pixels válidos
+  valores_i <- values(mask_i, na.rm = TRUE)
+  
+  if (length(valores_i) == 0) {
+    
+    metricas_lista[[i]] <- data.frame(
+      id_buffer = i,
+      diversidade_shannon = NA,
+      perc_floresta = 0,
+      densidade_borda_m_ha = NA
+    )
+    
+    next
+  }
+  
+  # ---------------------------------------------------------------------------
+  # 2. Calcular métricas de paisagem
+  # ---------------------------------------------------------------------------
+  
+  shannon <- lsm_l_shdi(mask_i)
+  pland_all <- lsm_c_pland(mask_i)
+  ed_all <- lsm_c_ed(mask_i)
+  
+  # ---------------------------------------------------------------------------
+  # 3. Filtrar apenas a classe Formação Florestal
+  # ---------------------------------------------------------------------------
+  
+  pland_floresta <- pland_all %>%
+    filter(.data$class == id_floresta)
+  
+  ed_floresta <- ed_all %>%
+    filter(.data$class == id_floresta)
+  
+  # ---------------------------------------------------------------------------
+  # 4. Extrair os valores
+  # ---------------------------------------------------------------------------
+  
+  div_shannon <- ifelse(
+    nrow(shannon) > 0,
+    shannon$value[1],
+    NA
+  )
+  
+  perc_floresta <- ifelse(
+    nrow(pland_floresta) > 0,
+    pland_floresta$value[1],
+    0
+  )
+  
+  dens_borda <- ifelse(
+    nrow(ed_floresta) > 0,
+    ed_floresta$value[1],
+    NA
+  )
+  
+  # ---------------------------------------------------------------------------
+  # 5. Guardar os resultados
+  # ---------------------------------------------------------------------------
+  
+  metricas_lista[[i]] <- data.frame(
+    id_buffer = i,
+    diversidade_shannon = div_shannon,
+    perc_floresta = perc_floresta,
+    densidade_borda_m_ha = dens_borda
+  )
+}
+
+# Combinar todos os resultados
+metricas_paisagem <- bind_rows(metricas_lista)
+
+# Mostrar a tabela no documento
+metricas_paisagem
+
+# Exportar tabela em CSV
+write.csv(
+  metricas_paisagem,
+  "metricas_paisagem_buffers.csv",
+  row.names = FALSE
+)
+
+```
+
+```{r painel-paisagens, warning=FALSE, message=FALSE, fig.width=14, fig.height=9}
+
+# =============================================================================
+# Painel com os recortes dos buffers
+# =============================================================================
+
+lista_recortes <- list()
+
+for (i in 1:nrow(buffers)) {
+  
+  # Recorta e mascara o raster pelo buffer i
+  crop_i <- crop(r_utm, buffers[i, ])
+  mask_i <- mask(crop_i, buffers[i, ])
+  
+  # Converte para data.frame
+  df_i <- as.data.frame(mask_i, xy = TRUE, cells = TRUE, na.rm = TRUE)
+  
+  # Se não houver pixels válidos, pula para o próximo buffer
+  if (nrow(df_i) == 0) next
+  
+  # Identifica o nome da coluna do raster
+  nome_col <- names(mask_i)[1]
+  
+  # Renomeia a coluna da classe
+  names(df_i)[names(df_i) == nome_col] <- "classe"
+  
+  # Coordenada central do buffer
+  centro_i <- crds(centroids(buffers[i, ]))
+  x0 <- centro_i[1, 1]
+  y0 <- centro_i[1, 2]
+  
+  # ALTERADO:
+  # Cria coordenadas locais para cada buffer.
+  # Assim todos os painéis ficam centralizados em 0,0.
+  df_i <- df_i %>%
+    mutate(
+      x_local = x - x0,
+      y_local = y - y0,
+      id_buffer = paste("Paisagem", i)
+    ) %>%
+    left_join(legenda, by = "classe")
+  
+  lista_recortes[[i]] <- df_i
+}
+
+# Combina todos os recortes
+df_painel <- bind_rows(lista_recortes)
+
+# Ordena os painéis
+df_painel$id_buffer <- factor(
+  df_painel$id_buffer,
+  levels = paste("Paisagem", 1:nrow(buffers))
+)
+
+# Ordena a legenda
+df_painel$Categoria <- factor(
+  df_painel$Categoria,
+  levels = legenda$Categoria
+)
+
+# =============================================================================
+# Plot do painel
+# =============================================================================
+
+p_painel <- ggplot(df_painel) +
+  geom_tile(aes(x = x_local, y = y_local, fill = Categoria)) +
+  scale_fill_manual(
+    values = setNames(legenda$Cores, legenda$Categoria),
+    drop = FALSE,
+    na.value = "white"
+  ) +
+  facet_wrap(~id_buffer, nrow = 3, ncol = 5) +
+  coord_equal() +
+  labs(
+    title = "Painel de Amostragem: 15 Paisagens de PAULISTA - PE",
+    subtitle = "Recortes circulares de 500 m de raio no interior de floresta",
+    fill = "Uso do Solo",
+    x = NULL,
+    y = NULL
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    panel.grid = element_blank(),
+    legend.position = "bottom",
+    strip.text = element_text(face = "bold")
+  )
+
+p_painel
+
+```
+
+## 4. Interpretação e Proposta de Manejo
+
+### 4.1 Descrição da metodologia de amostragem
+
+Para esta análise, utilizei o raster de uso e cobertura do solo do município de Paulista-PE. Antes de realizar os cálculos, o raster foi reprojetado para o sistema UTM, pois esse sistema permite trabalhar com distâncias em metros. Isso foi importante para a criação dos buffers e para a interpretação espacial das paisagens amostradas.
+
+A classe principal analisada foi a Formação Florestal, pois ela representa o habitat mais importante para avaliar a integridade ecológica da área. A partir dessa classe, foram sorteados pontos amostrais no interior dos fragmentos florestais. Também foi considerada uma distância mínima entre os pontos, para evitar que as áreas analisadas ficassem muito próximas ou sobrepostas.
+
+Depois da escolha dos pontos, foram criados buffers circulares de 500 m de raio ao redor de cada ponto. Cada buffer foi considerado uma paisagem amostral. Dentro dessas paisagens, foram calculadas algumas métricas para avaliar a composição e a estrutura do uso do solo.
+
+As métricas utilizadas foram: diversidade de Shannon, percentual de Formação Florestal e densidade de borda da classe florestal. O percentual de floresta foi usado para indicar a quantidade de habitat disponível em cada paisagem. A densidade de borda foi usada como uma medida relacionada à fragmentação, pois paisagens com muitas bordas podem estar mais sujeitas aos efeitos externos da matriz ao redor. Já a diversidade de Shannon indicou o quanto a paisagem é heterogênea, ou seja, o quanto existem diferentes classes de uso do solo dentro do buffer.
+
+Os mapas das paisagens amostradas ajudaram a visualizar melhor a distribuição das classes dentro de cada buffer, facilitando a comparação entre áreas mais conservadas, áreas mais fragmentadas e áreas com maior presença de usos antrópicos.
+
+------------------------------------------------------------------------
+
+### 4.2 Tabela comparativa das métricas calculadas
+
+| Paisagem | Diversidade de Shannon | Percentual de Floresta (%) | Densidade de Borda (m/ha) |
+|-----------------:|-----------------:|-----------------:|-----------------:|
+| 1 | 0,38 | 89,06 | 30,94 |
+| 2 | 0,88 | 2,59 | 18,49 |
+| 3 | 1,19 | 28,03 | 51,60 |
+| 4 | 0,17 | 95,96 | 20,38 |
+| 5 | 1,05 | 50,48 | 60,24 |
+| 6 | 0,92 | 14,47 | 61,51 |
+| 7 | 0,96 | 16,24 | 62,29 |
+| 8 | 0,89 | 68,25 | 65,60 |
+| 9 | 1,15 | 39,60 | 80,22 |
+| 10 | 1,07 | 37,15 | 88,57 |
+| 11 | 1,13 | 27,32 | 56,02 |
+| 12 | 0,99 | 91,85 | 45,48 |
+| 13 | 0,57 | 81,55 | 51,49 |
+| 14 | 0,80 | 75,17 | 34,43 |
+| 15 | 1,75 | 2,87 | 21,08 |
+
+------------------------------------------------------------------------
+
+### 4.3 Paisagens com melhor integridade ecológica
+
+As paisagens que apresentaram melhor integridade ecológica foram aquelas com maior percentual de Formação Florestal e menor densidade de borda. Esses dois critérios são importantes porque indicam áreas com maior quantidade de habitat e menor grau de fragmentação.
+
+Com base nos resultados, as paisagens que mais se destacaram foram as Paisagens 4, 1, 12, 13 e 14.
+
+A Paisagem 4 foi a que apresentou o melhor resultado geral. Ela possui cerca de 95,96% de Formação Florestal, além de baixa densidade de borda e baixa diversidade de Shannon. Isso indica que essa paisagem é bastante dominada por floresta, com pouca presença de outras classes de uso do solo. Por isso, ela pode ser considerada a área com maior integridade ecológica entre as paisagens avaliadas.
+
+A Paisagem 1 também apresentou uma condição muito boa, com 89,06% de Formação Florestal e densidade de borda relativamente baixa. A Paisagem 12 teve um percentual de floresta ainda maior, com 91,85%, mas apresentou densidade de borda mais alta do que as Paisagens 1 e 4. Isso pode indicar que, apesar de ter muita floresta, a mancha florestal pode ser mais recortada ou mais exposta aos efeitos de borda.
+
+As Paisagens 13 e 14 também são importantes, pois apresentaram 81,55% e 75,17% de floresta, respectivamente. Mesmo com valores um pouco menores, essas áreas ainda possuem boa quantidade de habitat e podem contribuir para a conservação da paisagem como um todo.
+
+Assim, considerando a quantidade de floresta e o grau de fragmentação, a prioridade ecológica pode ser organizada da seguinte forma:
+
+Paisagem 4 \> Paisagem 1 \> Paisagem 12 \> Paisagem 14 \> Paisagem 13.
+
+------------------------------------------------------------------------
+
+### 4.4 Áreas com função de trampolins ecológicos
+
+Além das áreas com maior integridade, também é importante observar as paisagens que podem funcionar como trampolins ecológicos, ou stepping stones. Essas áreas não são necessariamente os melhores núcleos de conservação, mas podem ajudar no deslocamento de espécies entre fragmentos maiores de floresta.
+
+Nesse caso, as paisagens que mais se destacam são as Paisagens 5, 8, 9 e 10. Essas áreas possuem cobertura florestal intermediária e estão acima do limiar crítico de 30% de habitat, o que indica que ainda podem ter importância ecológica.
+
+A Paisagem 5 apresentou 50,48% de Formação Florestal, enquanto a Paisagem 8 apresentou 68,25%. Esses valores indicam que essas paisagens ainda possuem uma quantidade relevante de floresta. No entanto, as duas também apresentaram densidade de borda elevada, o que mostra que a floresta está mais fragmentada e mais exposta à influência das outras classes de uso do solo.
+
+As Paisagens 9 e 10 também estão acima do limiar de 30%, com 39,60% e 37,15% de floresta. Apesar disso, elas apresentaram as maiores densidades de borda entre todas as paisagens analisadas, com 80,22 m/ha e 88,57 m/ha. Isso indica que essas áreas podem ter importância para conectividade, mas precisam de atenção em relação à fragmentação.
+
+Por isso, as Paisagens 5, 8, 9 e 10 podem ser consideradas áreas importantes para manejo e restauração. Elas podem ajudar a conectar fragmentos florestais mais conservados, mas não seriam as melhores opções para funcionar como núcleo principal de uma Unidade de Conservação.
+
+Já as Paisagens 2, 6, 7, 11 e 15 apresentaram baixa cobertura florestal ou valores próximos/abaixo do limiar crítico. As Paisagens 2 e 15, principalmente, tiveram menos de 3% de floresta. Dessa forma, elas não são indicadas como áreas prioritárias para proteção imediata, mas poderiam ser consideradas em ações futuras de recuperação ambiental.
+
+------------------------------------------------------------------------
+
+### 4.5 Indicação da área prioritária para criação da nova Unidade de Conservação
+
+Com base nos resultados das métricas, a área mais indicada para a criação da nova Unidade de Conservação é a região representada pela Paisagem 4.
+
+Essa paisagem apresentou o maior percentual de Formação Florestal, com aproximadamente 95,96%, além de baixa densidade de borda e baixa diversidade de Shannon. Esses resultados mostram que a Paisagem 4 é uma área mais contínua, mais conservada e menos fragmentada em comparação com as demais.
+
+A escolha dessa paisagem também se justifica pelo conceito de limiar crítico de habitat, geralmente associado à regra dos 30% de cobertura mínima. Quando uma paisagem fica abaixo desse valor, a conectividade tende a diminuir e as populações podem ter mais dificuldade para se manter ao longo do tempo. Como a Paisagem 4 está muito acima desse limite, ela apresenta maior potencial para manter populações viáveis e processos ecológicos importantes.
+
+Apesar disso, a Unidade de Conservação não deve ser pensada apenas como uma área isolada. O ideal seria que a Paisagem 4 funcionasse como núcleo principal, mas que houvesse também uma tentativa de conectar ou incluir áreas próximas com alta cobertura florestal, como as Paisagens 1, 12, 13 e 14.
+
+Essa estratégia aumentaria a área total protegida, reduziria os efeitos da fragmentação e melhoraria a conectividade funcional entre os fragmentos florestais. Dessa forma, a conservação seria mais eficiente do que proteger apenas uma mancha isolada.
+
+------------------------------------------------------------------------
+
+### 4.6 Parecer Técnico Resumido
+
+Com base nas métricas analisadas, recomendo que a nova Unidade de Conservação seja instalada prioritariamente na área correspondente à Paisagem 4. Essa paisagem apresentou a melhor condição ecológica entre todas as áreas avaliadas, com cerca de 95,96% de Formação Florestal, baixa densidade de borda e baixa diversidade de Shannon.
+
+Essas características indicam que a Paisagem 4 é uma área mais conservada, com maior continuidade de habitat e menor influência de outros usos do solo. Por isso, ela possui maior potencial para funcionar como núcleo principal de conservação.
+
+Como áreas complementares, também devem ser consideradas as Paisagens 1, 12, 13 e 14, pois elas apresentaram altos percentuais de cobertura florestal. Essas áreas poderiam ser incorporadas ao planejamento da Unidade de Conservação ou conectadas por meio de corredores ecológicos e ações de restauração.
+
+As Paisagens 5, 8, 9 e 10 podem ter importância para a conectividade da paisagem, funcionando como trampolins ecológicos. No entanto, como apresentam maior densidade de borda e maior fragmentação, essas áreas precisam de medidas de manejo e recuperação.
+
+As paisagens com baixa cobertura florestal, principalmente as Paisagens 2 e 15, não devem ser priorizadas como núcleo da Unidade de Conservação, pois apresentam pouca disponibilidade de habitat florestal. Mesmo assim, elas podem ser consideradas em projetos de restauração, dependendo da sua localização em relação aos fragmentos mais conservados.
+
+Dessa forma, a melhor proposta de conservação é proteger a Paisagem 4 como núcleo principal e, sempre que possível, conectá-la às Paisagens 1, 12, 13 e 14. Essa estratégia contribui para a manutenção da cobertura florestal, reduz os impactos da fragmentação e melhora a conectividade ecológica da área.
+
+------------------------------------------------------------------------
+
+### 4.7 Síntese da recomendação
+
+A análise das 15 paisagens mostrou que a Paisagem 4 é a área mais adequada para a instalação da nova Unidade de Conservação em Paulista-PE. Essa indicação se baseia principalmente no alto percentual de Formação Florestal, na baixa densidade de borda e na menor heterogeneidade da paisagem.
+
+Além da proteção da Paisagem 4, é importante pensar em estratégias de conexão com outras áreas florestais próximas, principalmente as Paisagens 1, 12, 13 e 14. Essas áreas podem aumentar a efetividade da Unidade de Conservação e favorecer a manutenção dos processos ecológicos.
+
+As paisagens intermediárias, como 5, 8, 9 e 10, devem ser consideradas em um plano de manejo voltado à conectividade e à restauração. Já as áreas com pouca floresta devem ser tratadas como zonas de recuperação ou amortecimento, e não como áreas centrais para a criação da Unidade de Conservação.
+
+Portanto, a proposta mais adequada é criar uma Unidade de Conservação baseada em um núcleo florestal bem preservado, representado pela Paisagem 4, associada a ações de conectividade e restauração no entorno. Essa abordagem aumenta a funcionalidade ecológica da paisagem e melhora as chances de conservação da biodiversidade local.
