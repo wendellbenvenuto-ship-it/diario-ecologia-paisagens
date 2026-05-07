@@ -43,7 +43,7 @@ if (nrow(area_sorteio) == 0) {
 }
 ```
 
-```{r mapa-pontos, fig.width=10, fig.height=7, warning=FALSE, message=FALSE}
+```{r mapa-murici, fig.width=10, fig.height=7, warning=FALSE, message=FALSE}
 
 ggplot() +
   geom_spatraster(data = r_utm) +
@@ -56,7 +56,7 @@ ggplot() +
   theme_minimal()
 ```
 
-```{r continuar-analise, warning=FALSE, message=FALSE}
+```{r continuar-analise-pontos, warning=FALSE, message=FALSE}
 
 set.seed(1234)
 pontos_finais <- NULL
@@ -125,7 +125,7 @@ ggplot() +
   theme(legend.position = "bottom")
 ```
 
-```{r continuar-analise, warning=FALSE, message=FALSE}
+```{r continuar-analise-metricas, warning=FALSE, message=FALSE}
 
 # Identificar o valor numérico da classe Floresta
 id_floresta <- legenda$id[legenda$Categoria == "Formação Florestal"]
@@ -169,7 +169,7 @@ metricas_paisagem <- bind_rows(metricas_lista)
 print(metricas_paisagem)
 ```
 
-```{r continuar-analise, warning=FALSE, message=FALSE}
+```{r continuar-analise-maparecortes, warning=FALSE, message=FALSE}
 
 lista_recortes <- list()
 for(i in 1:nrow(buffers)) {
