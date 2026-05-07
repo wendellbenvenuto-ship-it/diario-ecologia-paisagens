@@ -608,7 +608,7 @@ Os mapas das paisagens amostradas ajudaram a visualizar melhor a distribuição 
 ### 4.2 Tabela comparativa das métricas calculadas
 
 | Paisagem | Diversidade de Shannon | Percentual de Floresta (%) | Densidade de Borda (m/ha) |
-|-----------------:|-----------------:|-----------------:|-----------------:|
+|---:|---:|---:|---:|
 | 1 | 0,38 | 89,06 | 30,94 |
 | 2 | 0,88 | 2,59 | 18,49 |
 | 3 | 1,19 | 28,03 | 51,60 |
