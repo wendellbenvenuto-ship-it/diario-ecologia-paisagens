@@ -176,11 +176,13 @@ print(area_sorteio_ha)
 # Calcula área em hectares
 area_sorteio_ha <- expanse(area_sorteio, unit = "ha")
 print(area_sorteio_ha)
-
 ```
 
-```{r mapa-area-sorteio, fig.height=7, fig.width=10, message=FALSE, warning=FALSE}
+```{r mapa-area-sorteio}
 #| echo: true
+#| message: true
+#| warning: true
+#| paged-print: true
 
 p_mapa <- ggplot() +
   geom_spatraster(data = r_plot) +
@@ -230,6 +232,8 @@ p_mapa <- ggplot() +
 p_mapa
 
 ```
+
+![](/images/paulista_mapa.jpg)
 
 ```{r continuar-analise}
 
@@ -331,7 +335,10 @@ writeVector(buffers, "buffers_500m.shp", overwrite = TRUE)
 
 ```
 
-```{r mapa-pontos, fig.height=7, fig.width=10, message=FALSE, warning=FALSE}
+```{r mapa-pontos}
+#| message: true
+#| warning: true
+#| paged-print: true
 
 p_mapa_pontos <- ggplot() +
   geom_spatraster(data = r_plot) +
@@ -373,6 +380,8 @@ p_mapa_pontos <- ggplot() +
 p_mapa_pontos
 
 ```
+
+![](/images/paulista_pontos.jpg)
 
 ```{r metricas-paisagem, warning=FALSE, message=FALSE}
 
@@ -481,7 +490,11 @@ write.csv(
 
 ```
 
-```{r painel-paisagens, warning=FALSE, message=FALSE, fig.width=14, fig.height=9}
+```{r painel-paisagens}
+#| echo: true
+#| message: true
+#| warning: true
+#| paged-print: true
 
 # =============================================================================
 # Painel com os recortes dos buffers
@@ -573,6 +586,8 @@ p_painel <- ggplot(df_painel) +
 p_painel
 
 ```
+
+![](/images/paulista_recortes.jpg)
 
 ## 4. Interpretação e Proposta de Manejo
 

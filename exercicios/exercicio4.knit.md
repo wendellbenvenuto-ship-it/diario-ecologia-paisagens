@@ -4,12 +4,184 @@ date: 2026-04-13
 author: "Wendell Benvenuto"
 ---
 
-```{r}
-library(terra)
-library(tidyverse)
-library(tidyterra)
-library(landscapemetrics)
 
+::: {.cell}
+
+```{.r .cell-code}
+library(terra)
+```
+
+::: {.cell-output .cell-output-stderr}
+
+```
+Warning: pacote 'terra' foi compilado no R versão 4.5.1
+```
+
+
+:::
+
+::: {.cell-output .cell-output-stderr}
+
+```
+terra 1.8.60
+```
+
+
+:::
+
+```{.r .cell-code}
+library(tidyverse)
+```
+
+::: {.cell-output .cell-output-stderr}
+
+```
+Warning: pacote 'tidyverse' foi compilado no R versão 4.5.1
+```
+
+
+:::
+
+::: {.cell-output .cell-output-stderr}
+
+```
+Warning: pacote 'tibble' foi compilado no R versão 4.5.3
+```
+
+
+:::
+
+::: {.cell-output .cell-output-stderr}
+
+```
+Warning: pacote 'tidyr' foi compilado no R versão 4.5.3
+```
+
+
+:::
+
+::: {.cell-output .cell-output-stderr}
+
+```
+Warning: pacote 'readr' foi compilado no R versão 4.5.3
+```
+
+
+:::
+
+::: {.cell-output .cell-output-stderr}
+
+```
+Warning: pacote 'purrr' foi compilado no R versão 4.5.3
+```
+
+
+:::
+
+::: {.cell-output .cell-output-stderr}
+
+```
+Warning: pacote 'dplyr' foi compilado no R versão 4.5.3
+```
+
+
+:::
+
+::: {.cell-output .cell-output-stderr}
+
+```
+Warning: pacote 'stringr' foi compilado no R versão 4.5.3
+```
+
+
+:::
+
+::: {.cell-output .cell-output-stderr}
+
+```
+Warning: pacote 'forcats' foi compilado no R versão 4.5.3
+```
+
+
+:::
+
+::: {.cell-output .cell-output-stderr}
+
+```
+Warning: pacote 'lubridate' foi compilado no R versão 4.5.3
+```
+
+
+:::
+
+::: {.cell-output .cell-output-stderr}
+
+```
+── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+✔ dplyr     1.2.1     ✔ readr     2.2.0
+✔ forcats   1.0.1     ✔ stringr   1.6.0
+✔ ggplot2   4.0.3     ✔ tibble    3.3.1
+✔ lubridate 1.9.5     ✔ tidyr     1.3.2
+✔ purrr     1.2.2     
+```
+
+
+:::
+
+::: {.cell-output .cell-output-stderr}
+
+```
+── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ tidyr::extract() masks terra::extract()
+✖ dplyr::filter()  masks stats::filter()
+✖ dplyr::lag()     masks stats::lag()
+ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
+```
+
+
+:::
+
+```{.r .cell-code}
+library(tidyterra)
+```
+
+::: {.cell-output .cell-output-stderr}
+
+```
+Warning: pacote 'tidyterra' foi compilado no R versão 4.5.3
+```
+
+
+:::
+
+::: {.cell-output .cell-output-stderr}
+
+```
+
+Anexando pacote: 'tidyterra'
+
+O seguinte objeto é mascarado por 'package:stats':
+
+    filter
+```
+
+
+:::
+
+```{.r .cell-code}
+library(landscapemetrics)
+```
+
+::: {.cell-output .cell-output-stderr}
+
+```
+Warning: pacote 'landscapemetrics' foi compilado no R versão 4.5.3
+```
+
+
+:::
+
+```{.r .cell-code}
 setwd("C://Users/benve/OneDrive/Documentos/diario_ecologia_wendell/exercicios") # mude para o seu próprio diretório
 
 r_murici <- rast("2024_murici.tif")
@@ -42,13 +214,13 @@ if (nrow(area_sorteio) == 0) {
   stop("Erro: Nenhuma floresta encontrada a mais de 2km da borda.")
 }
 ```
+:::
 
-```{r mapa-murici}
-#| echo: true
-#| message: true
-#| warning: true
-#| paged-print: true
 
+
+::: {.cell}
+
+```{.r .cell-code}
 ggplot() +
   geom_spatraster(data = r_utm) +
   scale_fill_manual(values = legenda$Cores, na.value = "white", name = "Uso do Solo") +
@@ -60,10 +232,27 @@ ggplot() +
   theme_minimal()
 ```
 
+::: {.cell-output .cell-output-stderr}
+
+```
+<SpatRaster> resampled to 500736 cells.
+```
+
+
+:::
+
+::: {.cell-output-display}
+![](exercicio4_files/figure-html/mapa-murici-1.png){width=672}
+:::
+:::
+
+
 ![](/images/murici_mapa.jpg)
 
-```{r continuar-analise-pontos, warning=FALSE, message=FALSE}
 
+::: {.cell}
+
+```{.r .cell-code}
 set.seed(1234)
 pontos_finais <- NULL
 tentativas <- 0
@@ -116,13 +305,13 @@ writeVector(pontos_finais, "pontos_final.shp", overwrite=TRUE)
 
 writeVector(buffers, "buffers_500m.shp", overwrite=TRUE)
 ```
+:::
 
-```{r mapa-pontos}
-#| echo: true
-#| message: true
-#| warning: true
-#| paged-print: true
 
+
+::: {.cell}
+
+```{.r .cell-code}
 ggplot() +
   geom_spatraster(data = r_utm) +
   scale_fill_manual(values = legenda$Cores, na.value = "white", name = "Uso do Solo") +
@@ -135,10 +324,27 @@ ggplot() +
   theme(legend.position = "bottom")
 ```
 
+::: {.cell-output .cell-output-stderr}
+
+```
+<SpatRaster> resampled to 500736 cells.
+```
+
+
+:::
+
+::: {.cell-output-display}
+![](exercicio4_files/figure-html/mapa-pontos-1.png){width=672}
+:::
+:::
+
+
 ![](/images/Murici_pontos.jpg)
 
-```{r continuar-analise-metricas, warning=FALSE, message=FALSE}
 
+::: {.cell}
+
+```{.r .cell-code}
 # Identificar o valor numérico da classe Floresta
 id_floresta <- legenda$id[legenda$Categoria == "Formação Florestal"]
 
@@ -181,11 +387,36 @@ metricas_paisagem <- bind_rows(metricas_lista)
 print(metricas_paisagem)
 ```
 
-```{r continuar-analise-maparecortes}
-#| echo: true
-#| warning: true
-#| paged-print: true
+::: {.cell-output .cell-output-stdout}
 
+```
+   id_buffer diversidade_shannon perc_floresta densidade_borda_m_ha
+1          1           0.7507504      78.22410             44.41351
+2          2           0.7551841      75.62028             53.66340
+3          3           1.2318169      49.41922             53.94980
+4          4           0.8906418      71.73679             33.35833
+5          5           1.0747283      57.00326             63.86672
+6          6           0.0000000     100.00000              0.00000
+7          7           1.3336246      31.62939             74.45502
+8          8           0.8789672      70.95745             25.38790
+9          9           1.3141271      23.73247             48.22454
+10        10           0.7153538      69.32907             24.34106
+11        11           1.0003162      44.07684             58.11278
+12        12           1.2808703      13.84452             44.74460
+13        13           0.6093134      83.75527             24.81909
+14        14           0.0000000     100.00000              0.00000
+15        15           1.0722640      23.58591             53.09069
+```
+
+
+:::
+:::
+
+
+
+::: {.cell}
+
+```{.r .cell-code}
 lista_recortes <- list()
 for(i in 1:nrow(buffers)) {
   crop_i <- crop(r_utm, buffers[i, ])
@@ -210,4 +441,11 @@ ggplot(df_painel) +
         legend.position = "bottom")
 ```
 
+::: {.cell-output-display}
+![](exercicio4_files/figure-html/continuar-analise-maparecortes-1.png){width=672}
+:::
+:::
+
+
 ![](/images/murici_recortes.jpg)
+
